@@ -17,13 +17,13 @@ for dataflow in config["dataflows"]:
         os.remove(file_path)
     shutil.copyfile(dag_template, file_path)
     dag_generator=[F"\ndataflow={dataflow}"]
-    dag_generator+=[F"\n@dag(dag_id=dataflow[\"name\"],\
-    \n\tschedule_interval=None,\
-    \n\tstart_date=datetime(2022, 2, 26),\
-    \n\tcatchup=False,\
-    \n\ttags=['sdg'])\
+    dag_generator+=[F"\n\n@dag(dag_id=dataflow[\"name\"],\
+    \n     schedule_interval=None,\
+    \n     start_date=datetime(2022, 2, 26),\
+    \n     catchup=False,\
+    \n     tags=['sdg'])\
     \ndef taskflow():\
-    \n    iterate_sources(dataflow)\
-    \na=taskflow()"]
+    \n     iterate_sources(dataflow)\
+    \n\na=taskflow()"]
     with open(file_path, "a") as file_object:
         file_object.writelines(dag_generator)

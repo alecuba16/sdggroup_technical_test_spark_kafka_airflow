@@ -1,9 +1,7 @@
-import json
 import os
 import shutil
-import fileinput
-from airflow.decorators import dag, task
 from datetime import datetime
+from airflow.decorators import dag, task
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python_operator import ShortCircuitOperator
@@ -161,26 +159,30 @@ def check_exit_code(spark_task_id):
 
 
 def iterate_sources(dataflow):
-    for source in dataflow["sources"]:
-        source_name = source["name"]
-        spark_task_id = F"spark_job_{source_name.replace('-', '_').replace(' ', '_')}"
+    join = DummyOperator(
+        task_id="join",
+        trigger_rule=TriggerRule.ALL_SUCCESS
+    )
+    for i,source in enumerate(dataflow["sources"]):
+        cleaned_source_name = source["name"].replace('-', '_').replace(' ', '_')
+        spark_task_id = F"spark_job{'_'+str(i) if i>0 else ''}"
+        check_exit_code_id= F"check_exit_code{'_'+str(i) if i>0 else ''}"
         data = {"dataflow": dataflow, "name": dataflow["name"], "source": source}
+
         data = generate_input_code(data)
         data = generate_transformations_code(data)
         data = generate_sinks_code(data)
         data = generate_spark_file(data)
+
         data >> CustomSparkSubmitOperator(
             application="default",
-            name=source_name,
+            name=cleaned_source_name,
             conn_id=conn_id,
             packages="org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.1",
             task_id=spark_task_id,
             conf={"spark.driver.extraJavaOptions": "-Divy.cache.dir=/tmp -Divy.home=/tmp"}
-        ) >> ShortCircuitOperator(task_id='check_exit_code',
-                                  python_callable=lambda: check_exit_code(spark_task_id)) >> DummyOperator(
-            task_id="join",
-            trigger_rule=TriggerRule.ALL_SUCCESS
-        )
+        ) >> ShortCircuitOperator(task_id=check_exit_code_id,
+                                  python_callable=lambda: check_exit_code(spark_task_id)) >> join
 
 
 ###########################################
@@ -190,11 +192,13 @@ create_spark_connection_if_not_exists(conn_id=conn_id)
 spark_template = '/opt/airflow/include/spark_template.py'
 
 dataflow={'name': 'prueba-acceso', 'sources': [{'name': 'person_inputs', 'path': '/data/input/events/person/*', 'format': 'JSON'}], 'transformations': [{'name': 'validation', 'type': 'validate_fields', 'params': {'input': 'person_inputs', 'validations': [{'field': 'office', 'validations': ['notEmpty']}, {'field': 'age', 'validations': ['notNull']}]}}, {'name': 'ok_with_date', 'type': 'add_fields', 'params': {'input': 'validation_ok', 'addFields': [{'name': 'dt', 'function': 'current_timestamp'}]}}], 'sinks': [{'input': 'ok_with_date', 'name': 'raw-ok', 'topics': ['person'], 'format': 'KAFKA'}, {'input': 'validation_ko', 'name': 'raw-ko', 'paths': ['/data/output/discards/person'], 'format': 'JSON', 'saveMode': 'OVERWRITE'}]}
+
 @dag(dag_id=dataflow["name"],    
-	schedule_interval=None,    
-	start_date=datetime(2022, 2, 26),    
-	catchup=False,    
-	tags=['sdg'])    
+     schedule_interval=None,    
+     start_date=datetime(2022, 2, 26),    
+     catchup=False,    
+     tags=['sdg'])    
 def taskflow():    
-    iterate_sources(dataflow)    
+     iterate_sources(dataflow)    
+
 a=taskflow()
