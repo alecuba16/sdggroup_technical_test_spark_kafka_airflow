@@ -1,16 +1,16 @@
 
 # sdggroup_technical_test_spark_kafka_airflow
-This is the deliverable with the necessary material and configuration to generate the complete platform with docker-composer. No external tools are equired.
+This is the deliverable with the necessary material and configuration to generate the complete platform with docker-composer. No external tools are required.
 
 ## Environment preparation steps
 
 ### Build
-The docker-composer have to be built, because I had to extend the airflow base image to include JAVA as it is required by the spark_submit command. Also there are other images that have been extended and configured, like the HDFS
+The docker-composer has to be built because I had to extend the airflow base image to include JAVA as it is required by the spark_submit command. Also, there are other images that have been extended and configured, like the HDFS.
 
 `docker-compose up --build`
 
 ### Upload person_inputs.json data (required)
-Once all the services all up (check with `docker-compose ps`) , at least the hadoop FS ones (namenode and datanode), you have to run the script at the root of the project :
+Once all the services all up (check with `docker-compose ps`) , at least the Hadoop FS ones (name node and data node), you have to run the script at the root of the project :
 
 `./upload_person_input.sh`
 
@@ -20,7 +20,7 @@ That script cleans the old data and reuploads the file to the HDFS.
 To use the graph generator you have to add the input files `person_inputs.json` with the data and `sdg_template.json` with the metadata inside the `input_files` directory.
 
 ### The generator
-The graph generator is inside the folder `graph_generator.py` and it requires the file `dag_template.py` since the common transformation operations (@task taskflow tasks) are there. The graph generator, takes the required fields from the template and with the content of the `dag_template.py`, generates a new file in the folder `airflow/dags/` with a dynamic name as provided in the `sdg_template.json`.
+The graph generator is inside the folder `graph_generator.py` and it requires the file `dag_template.py` since the common transformation operations (@task Taskflow tasks) are there. The graph generator takes the required fields from the template and, with the content of the `dag_template.py`, generates a new file in the folder `airflow/dags/` with a dynamic name as provided in the `sdg_template.json`.
 
 The generated file, requires in airflow runtime of the `spark_template.py` file that is inside `airflow/include/` folder.
 
@@ -47,7 +47,7 @@ The generated file, requires in airflow runtime of the `spark_template.py` file 
 ![Kafka After msg](https://raw.githubusercontent.com/alecuba16/sdggroup_technical_test_spark_kafka_airflow/main/screenshots/kafka2.png)
 *Kafka After msg*
 
-## Cleanup (Be ware!)
+## Cleanup (beware!)
 
 #### Remove old images
 docker rmi -f $(docker images -a -q)
