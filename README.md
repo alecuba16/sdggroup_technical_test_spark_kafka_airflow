@@ -24,7 +24,7 @@ The graph generator is inside the folder `graph_generator.py` and it requires th
 
 The generated file, requires in airflow runtime of the `spark_template.py` file that is inside `airflow/include/` folder.
 
-## Screenshots
+## screenshots
 
 ![Docker containers running](https://raw.githubusercontent.com/alecuba16/sdggroup_technical_test_spark_kafka_airflow/main/screenshoots/docker_ps.png)
 *Docker containers running*
