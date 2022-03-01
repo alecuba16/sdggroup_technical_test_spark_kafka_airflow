@@ -57,7 +57,7 @@ def process_transformation_validation(transformations, lines, input_df):
     filter_content = [operation["op"] for operation in operations]
     filter_content = "(" + ") & (".join(filter_content) + ")" if len(filter_content) > 1 else filter_content[0]
 
-    filter_msg = [F"when({operation['op']},{operation['fail_reason']})" for operation in operations]
+    filter_msg = [F"when(~({operation['op']}),{operation['fail_reason']})" for operation in operations]
     filter_msg = ','.join(filter_msg)
 
     lines += [F"{name_out_df}_ok={input_df}.filter({filter_content})"]
