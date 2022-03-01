@@ -27,8 +27,8 @@ def create_spark_connection_if_not_exists(conn_id="spark_docker", host="spark://
 
 def not_empty(field):
     return {"field": field,
-            "op": F"col(\"{field}\")!=lit(\"\")",
-            "invert_op": F"col(\"{field}\")==lit(\"\")",
+            "op": F"col(\"{field}\").cast(StringType())!=lit(\"\")",
+            "invert_op": F"col(\"{field}\").cast(StringType())==lit(\"\")",
             "fail_reason": F"\"{field} is empty\""}
 
 
@@ -205,7 +205,7 @@ create_spark_connection_if_not_exists(conn_id=conn_id)
 
 spark_template = '/opt/airflow/include/spark_template.py'
 
-dataflow={'name': 'prueba-acceso', 'sources': [{'name': 'person_inputs', 'path': '/data/input/events/person/*', 'format': 'JSON'}], 'transformations': [{'name': 'validation', 'type': 'validate_fields', 'params': {'input': 'person_inputs', 'validations': [{'field': 'office', 'validations': ['notEmpty']}, {'field': 'age', 'validations': ['notNull']}]}}, {'name': 'ok_with_date', 'type': 'add_fields', 'params': {'input': 'validation_ok', 'addFields': [{'name': 'dt', 'function': 'current_timestamp'}]}}], 'sinks': [{'input': 'ok_with_date', 'name': 'raw-ok', 'topics': ['person'], 'format': 'KAFKA'}, {'input': 'validation_ko', 'name': 'raw-ko', 'paths': ['/data/output/discards/person'], 'format': 'JSON', 'saveMode': 'OVERWRITE'}]}
+dataflow={'name': 'prueba-acceso', 'sources': [{'name': 'person_inputs', 'path': '/data/input/events/person/*', 'format': 'JSON'}], 'transformations': [{'name': 'validation', 'type': 'validate_fields', 'params': {'input': 'person_inputs', 'validations': [{'field': 'office', 'validations': ['notEmpty', 'notNull']}, {'field': 'age', 'validations': ['notNull', 'notEmpty']}]}}, {'name': 'ok_with_date', 'type': 'add_fields', 'params': {'input': 'validation_ok', 'addFields': [{'name': 'dt', 'function': 'current_timestamp'}]}}], 'sinks': [{'input': 'ok_with_date', 'name': 'raw-ok', 'topics': ['person'], 'format': 'KAFKA'}, {'input': 'validation_ko', 'name': 'raw-ko', 'paths': ['/data/output/discards/person'], 'format': 'JSON', 'saveMode': 'OVERWRITE'}]}
 
 @dag(dag_id=dataflow["name"],    
      schedule_interval=None,    

@@ -27,8 +27,8 @@ def create_spark_connection_if_not_exists(conn_id="spark_docker", host="spark://
 
 def not_empty(field):
     return {"field": field,
-            "op": F"col(\"{field}\")!=lit(\"\")",
-            "invert_op": F"col(\"{field}\")==lit(\"\")",
+            "op": F"col(\"{field}\").cast(StringType())!=lit(\"\")",
+            "invert_op": F"col(\"{field}\").cast(StringType())==lit(\"\")",
             "fail_reason": F"\"{field} is empty\""}
 
 
