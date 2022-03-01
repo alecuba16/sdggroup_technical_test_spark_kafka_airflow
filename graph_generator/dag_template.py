@@ -26,11 +26,17 @@ def create_spark_connection_if_not_exists(conn_id="spark_docker", host="spark://
 
 
 def not_empty(field):
-    return {"field": field, "op": F"col(\"{field}\")!=lit(\"\")", "fail_reason": F"\"{field} is empty\""}
+    return {"field": field,
+            "op": F"col(\"{field}\")!=lit(\"\")",
+            "invert_op": F"col(\"{field}\")!=lit(\"\")",
+            "fail_reason": F"\"{field} is empty\""}
 
 
 def not_null(field):
-    return {"field": field, "op": F"col(\"{field}\").isNotNull()", "fail_reason": F"\"{field} is null\""}
+    return {"field": field,
+            "op": F"col(\"{field}\").isNotNull()",
+            "invert_op": F"col(\"{field}\").isNotNull()",
+            "fail_reason": F"\"{field} is null\""}
 
 
 def current_timestamp(name):
@@ -46,6 +52,9 @@ switch_addfields = {
     "current_timestamp": current_timestamp
 }
 
+def generate_filter_operators():
+    return
+
 
 def process_transformation_validation(transformations, lines, input_df):
     operations = []
@@ -57,7 +66,7 @@ def process_transformation_validation(transformations, lines, input_df):
     filter_content = [operation["op"] for operation in operations]
     filter_content = "(" + ") & (".join(filter_content) + ")" if len(filter_content) > 1 else filter_content[0]
 
-    filter_msg = [F"when(~({operation['op']}),{operation['fail_reason']})" for operation in operations]
+    filter_msg = [F"when({operation['invert_op']}),{operation['fail_reason']})" for operation in operations]
     filter_msg = ','.join(filter_msg)
 
     lines += [F"{name_out_df}_ok={input_df}.filter({filter_content})"]
