@@ -1,5 +1,6 @@
 import os
 import shutil
+import logging
 from datetime import datetime
 from airflow.decorators import dag, task
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
@@ -61,7 +62,7 @@ def process_transformation_validation(transformations, lines, input_df):
 
     lines += [F"{name_out_df}_ok={input_df}.filter({filter_content})"]
     lines += [F"{name_out_df}_ko={input_df}.filter(~({filter_content}))"]
-    lines += [F"{name_out_df}_ko={input_df}.withColumn('arraycoderrorbyfield',array({filter_msg}))"]
+    lines += [F"{name_out_df}_ko={name_out_df}_ko.withColumn('arraycoderrorbyfield',array({filter_msg}))"]
     lines += [F"{name_out_df}_ko={name_out_df}_ko.withColumn('arraycoderrorbyfield',"
               + "array_except('arraycoderrorbyfield',array(lit(None))))"]
     return lines
@@ -133,10 +134,14 @@ def generate_spark_file(data, tmp_path="/tmp/"):
     lines = data["lines"]
     file_name = data["source"]["name"]
     file_path = tmp_path + file_name + ".py"
-    lines = map((lambda x: x + '\n'), lines)
+    lines = [line+'\n' for line in lines]
+    # read the template
+    with open(spark_template) as file:
+        spark_template_lines = file.readlines()
+    lines=spark_template_lines + lines
+    logging.info("\n### INI SPARK CODE ###\n"+"".join(lines)+"### END SPARK CODE ###\n")
     if os.path.exists(file_path):
         os.remove(file_path)
-    shutil.copyfile(spark_template, file_path)
     with open(file_path, "a") as file_object:
         file_object.writelines(lines)
     data["file_path"] = file_path
