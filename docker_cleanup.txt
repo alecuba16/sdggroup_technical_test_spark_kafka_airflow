@@ -1,0 +1,1 @@
+docker rm -f $(docker ps -a -q) && docker volume rm $(docker volume ls -q) && docker container prune -f && docker image prune -f && docker volume prune -f
